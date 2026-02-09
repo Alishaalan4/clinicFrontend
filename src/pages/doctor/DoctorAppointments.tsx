@@ -4,6 +4,7 @@ import {
   acceptAppointment,
   cancelAppointment,
   completeAppointment,
+  getAppointmentFile,
 } from '../../services/doctorService';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import Modal from '../../components/common/Modal';
@@ -94,6 +95,28 @@ const DoctorAppointments: React.FC = () => {
       setMessage({
         type: 'error',
         text: error.response?.data?.msg || 'Failed to complete appointment',
+      });
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleDownload = async (id: number, filename: string) => {
+    setActionLoading(id);
+    try {
+      const blob = await getAppointmentFile(id);
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', filename || `appointment-file-${id}`);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode?.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error: any) {
+      setMessage({
+        type: 'error',
+        text: 'Failed to download file',
       });
     } finally {
       setActionLoading(null);
@@ -212,9 +235,15 @@ const DoctorAppointments: React.FC = () => {
                       </span>
                     )}
                     {apt.file_upload && (
-                      <span style={{ color: 'var(--success-green)', fontSize: '0.875rem' }}>
-                        📎 File attached
-                      </span>
+                      <div className="file-attachment">
+                        <button 
+                          className="download-link-btn"
+                          onClick={() => handleDownload(apt.id, apt.file_upload || '')}
+                          disabled={actionLoading === apt.id}
+                        >
+                          📎 {actionLoading === apt.id ? 'Downloading...' : 'Download File'}
+                        </button>
+                      </div>
                     )}
                     {!apt.cancel_reason && !apt.file_upload && '-'}
                   </td>

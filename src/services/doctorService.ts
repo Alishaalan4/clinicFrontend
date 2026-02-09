@@ -53,6 +53,13 @@ export const completeAppointment = async (appointmentId: number): Promise<{ msg:
   return response.data;
 };
 
+export const getAppointmentFile = async (appointmentId: number): Promise<Blob> => {
+  const response = await api.get(`/doctor/appointments/${appointmentId}/file`, {
+    responseType: 'blob',
+  });
+  return response.data;
+};
+
 // Stats
 export const getDoctorStats = async (): Promise<DoctorStats> => {
   const response = await api.get<DoctorStats>('/doctor/stats');

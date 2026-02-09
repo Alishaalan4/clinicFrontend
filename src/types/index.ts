@@ -48,6 +48,7 @@ export interface Appointment {
   status: AppointmentStatus;
   cancel_reason: string | null;
   file_upload: string | null;
+  file_url: string | null;
   created_at: string;
   updated_at: string;
   doctor?: Doctor;
