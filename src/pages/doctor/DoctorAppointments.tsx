@@ -101,14 +101,34 @@ const DoctorAppointments: React.FC = () => {
     }
   };
 
-  const handleDownload = async (id: number, filename: string) => {
+  const handleView = async (id: number) => {
+    setActionLoading(id);
+    try {
+      const blob = await getAppointmentFile(id);
+      const url = window.URL.createObjectURL(blob);
+      window.open(url, '_blank');
+      // Revoke the URL after a short delay since it's opened in a new tab
+      setTimeout(() => window.URL.revokeObjectURL(url), 1000);
+    } catch (error: any) {
+      setMessage({
+        type: 'error',
+        text: 'Failed to view file',
+      });
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleDownload = async (id: number, filePath: string) => {
     setActionLoading(id);
     try {
       const blob = await getAppointmentFile(id);
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', filename || `appointment-file-${id}`);
+      // Extract filename from path or use default
+      const filename = filePath.split('/').pop() || `appointment-file-${id}`;
+      link.setAttribute('download', filename);
       document.body.appendChild(link);
       link.click();
       link.parentNode?.removeChild(link);
@@ -235,13 +255,22 @@ const DoctorAppointments: React.FC = () => {
                       </span>
                     )}
                     {apt.file_upload && (
-                      <div className="file-attachment">
+                      <div className="file-actions">
                         <button 
-                          className="download-link-btn"
+                          className="file-btn view"
+                          title="View File"
+                          onClick={() => handleView(apt.id)}
+                          disabled={actionLoading === apt.id}
+                        >
+                          👁️ {actionLoading === apt.id ? '' : 'View'}
+                        </button>
+                        <button 
+                          className="file-btn download"
+                          title="Download File"
                           onClick={() => handleDownload(apt.id, apt.file_upload || '')}
                           disabled={actionLoading === apt.id}
                         >
-                          📎 {actionLoading === apt.id ? 'Downloading...' : 'Download File'}
+                          📥 {actionLoading === apt.id ? '' : 'Download'}
                         </button>
                       </div>
                     )}
