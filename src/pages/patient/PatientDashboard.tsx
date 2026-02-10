@@ -128,8 +128,8 @@ const PatientDashboard: React.FC = () => {
                       <span className="appointment-time">
                         🕐 {appointment.appointment_time.slice(0, 5)}
                       </span>
-                      <span className="appointment-doctor-id">
-                        Doctor ID: {appointment.doctor_id}
+                      <span className="appointment-doctor-name">
+                        Dr. {appointment.doctor?.name || `ID: ${appointment.doctor_id}`}
                       </span>
                     </div>
                   </div>

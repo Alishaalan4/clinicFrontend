@@ -32,6 +32,11 @@ export const addDoctorAvailability = async (data: AddAvailabilityData): Promise<
   return response.data.availability;
 };
 
+export const deleteDoctorAvailability = async (id: number): Promise<{ message: string }> => {
+  const response = await api.delete<{ message: string }>(`/doctor/availability/${id}`);
+  return response.data;
+};
+
 // Appointments
 export const getDoctorAppointments = async (): Promise<Appointment[]> => {
   const response = await api.get<Appointment[]>('/doctor/appointments');

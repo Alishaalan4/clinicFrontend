@@ -90,7 +90,7 @@ const PatientAppointments: React.FC = () => {
               <tr>
                 <th>Date</th>
                 <th>Time</th>
-                <th>Doctor ID</th>
+                <th>Doctor</th>
                 <th>Status</th>
                 <th>Notes</th>
               </tr>
@@ -113,7 +113,16 @@ const PatientAppointments: React.FC = () => {
                       {apt.appointment_time.slice(0, 5)}
                     </span>
                   </td>
-                  <td>Doctor #{apt.doctor_id}</td>
+                  <td>
+                    <span style={{ fontWeight: 500 }}>
+                      {apt.doctor?.name || `Doctor #${apt.doctor_id}`}
+                    </span>
+                    {apt.doctor?.specialization && (
+                      <div style={{ fontSize: '0.8125rem', color: 'var(--text-tertiary)' }}>
+                        {apt.doctor.specialization}
+                      </div>
+                    )}
+                  </td>
                   <td>
                     <span className={`badge ${getStatusClass(apt.status)}`}>
                       {getStatusLabel(apt.status)}
