@@ -110,13 +110,20 @@ const DoctorsList: React.FC = () => {
                   </div>
                 )}
               </div>
-              <div style={{ marginTop: '1rem' }}>
+              <div style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem' }}>
+                <Link
+                  to={`/patient/doctors/${doctor.id}`}
+                  className="btn btn-outline"
+                  style={{ flex: 1, textAlign: 'center' }}
+                >
+                  View Profile
+                </Link>
                 <Link
                   to={`/patient/doctors/${doctor.id}/book`}
                   className="btn btn-primary"
-                  style={{ width: '100%' }}
+                  style={{ flex: 1, textAlign: 'center' }}
                 >
-                  Book Appointment
+                  Book
                 </Link>
               </div>
             </div>

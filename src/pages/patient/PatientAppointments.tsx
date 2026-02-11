@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { getUserAppointments } from '../../services/userService';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import type { Appointment, AppointmentStatus } from '../../types';
@@ -114,9 +115,11 @@ const PatientAppointments: React.FC = () => {
                     </span>
                   </td>
                   <td>
-                    <span style={{ fontWeight: 500 }}>
-                      {apt.doctor?.name || `Doctor #${apt.doctor_id}`}
-                    </span>
+                    <Link to={`/patient/doctors/${apt.doctor_id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                      <span style={{ fontWeight: 500 }} className="hover-underline">
+                        {apt.doctor?.name || `Doctor #${apt.doctor_id}`}
+                      </span>
+                    </Link>
                     {apt.doctor?.specialization && (
                       <div style={{ fontSize: '0.8125rem', color: 'var(--text-tertiary)' }}>
                         {apt.doctor.specialization}

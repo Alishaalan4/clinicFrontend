@@ -10,6 +10,7 @@ import Register from './pages/auth/Register';
 // Patient Pages
 import PatientDashboard from './pages/patient/PatientDashboard';
 import DoctorsList from './pages/patient/DoctorsList';
+import DoctorDetail from './pages/patient/DoctorDetail';
 import BookAppointment from './pages/patient/BookAppointment';
 import PatientAppointments from './pages/patient/PatientAppointments';
 import PatientProfile from './pages/patient/PatientProfile';
@@ -121,6 +122,7 @@ function App() {
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<PatientDashboard />} />
           <Route path="doctors" element={<DoctorsList />} />
+          <Route path="doctors/:doctorId" element={<DoctorDetail />} />
           <Route path="doctors/:doctorId/book" element={<BookAppointment />} />
           <Route path="appointments" element={<PatientAppointments />} />
           <Route path="profile" element={<PatientProfile />} />
