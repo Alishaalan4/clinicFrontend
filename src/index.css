@@ -211,6 +211,7 @@ a:hover {
 
 .btn-primary:hover:not(:disabled) {
   background: var(--primary-blue-dark);
+  color: var(--text-inverse);
   transform: translateY(-1px);
   box-shadow: var(--shadow-md);
 }

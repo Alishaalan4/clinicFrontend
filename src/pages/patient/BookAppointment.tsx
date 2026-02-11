@@ -44,7 +44,7 @@ const BookAppointment: React.FC = () => {
     return dates;
   };
 
-  const availableDates = getAvailableDates();
+  const availableDates = React.useMemo(() => getAvailableDates(), []);
 
   useEffect(() => {
     const fetchDoctor = async () => {
@@ -125,7 +125,7 @@ const BookAppointment: React.FC = () => {
   };
 
   if (isLoading) {
-    return <LoadingSpinner text="Loading..." />;
+    return <LoadingSpinner text="Getting doctor information..." />;
   }
 
   if (!doctor) {
@@ -134,7 +134,7 @@ const BookAppointment: React.FC = () => {
         <div className="empty-state-icon">❌</div>
         <p className="empty-state-title">Doctor not found</p>
         <button className="btn btn-primary" onClick={() => navigate('/patient/doctors')}>
-          Back to Doctors
+          Back to Doctors List
         </button>
       </div>
     );
@@ -146,33 +146,39 @@ const BookAppointment: React.FC = () => {
     <div className="book-appointment-page">
       <div className="page-header">
         <h1 className="page-title">Book Appointment</h1>
-        <p className="page-subtitle">Schedule your visit with {doctor.name}</p>
+        <p className="page-subtitle">Pick a suitable time for your visit with Dr. {doctor.name}</p>
       </div>
 
       {/* Progress Steps */}
       <div className="booking-steps">
+        <div className="booking-steps-line">
+          <div 
+            className="booking-steps-progress" 
+            style={{ width: `${((currentStep - 1) / 2) * 100}%` }}
+          ></div>
+        </div>
         <div className={`booking-step ${currentStep >= 1 ? 'active' : ''} ${currentStep > 1 ? 'completed' : ''}`}>
-          <span className="step-number">{currentStep > 1 ? '✓' : '1'}</span>
+          <div className="step-number">{currentStep > 1 ? '✓' : '1'}</div>
           <span className="step-label">Select Date</span>
         </div>
         <div className={`booking-step ${currentStep >= 2 ? 'active' : ''} ${currentStep > 2 ? 'completed' : ''}`}>
-          <span className="step-number">{currentStep > 2 ? '✓' : '2'}</span>
+          <div className="step-number">{currentStep > 2 ? '✓' : '2'}</div>
           <span className="step-label">Select Time</span>
         </div>
         <div className={`booking-step ${currentStep >= 3 ? 'active' : ''}`}>
-          <span className="step-number">3</span>
+          <div className="step-number">3</div>
           <span className="step-label">Confirm</span>
         </div>
       </div>
 
       {error && (
-        <div className="alert alert-danger mb-4">
+        <div className="alert alert-danger mb-5 animate-slide-up">
           <span>⚠️</span> {error}
         </div>
       )}
 
       {success && (
-        <div className="alert alert-success mb-4">
+        <div className="alert alert-success mb-5 animate-slide-up">
           <span>✓</span> {success}
         </div>
       )}
@@ -184,15 +190,15 @@ const BookAppointment: React.FC = () => {
             {doctor.name.charAt(0).toUpperCase()}
           </div>
           <div className="doctor-selection-info">
-            <h3>{doctor.name}</h3>
+            <h3>Dr. {doctor.name}</h3>
             <p>{doctor.specialization}</p>
           </div>
         </div>
 
         {/* Date Selection */}
         <div className="date-picker-section">
-          <h4>📅 Select a Date</h4>
-          <div className="calendar-grid" style={{ gridTemplateColumns: 'repeat(7, 1fr)' }}>
+          <h4>📅 1. Select a Date</h4>
+          <div className="calendar-grid">
             {availableDates.map((d) => (
               <button
                 key={d.date}
@@ -201,9 +207,9 @@ const BookAppointment: React.FC = () => {
                 disabled={d.isWeekend}
                 title={d.isWeekend ? 'Not available on weekends' : ''}
               >
-                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{d.dayName}</span>
-                <span style={{ fontWeight: 600 }}>{d.dayNum}</span>
-                <span style={{ fontSize: '0.65rem' }}>{d.month}</span>
+                <span className="day-name" style={{ fontSize: '0.75rem', marginBottom: '0.25rem' }}>{d.dayName}</span>
+                <span className="day-num" style={{ fontSize: '1.25rem' }}>{d.dayNum}</span>
+                <span className="day-month" style={{ fontSize: '0.75rem', marginTop: '0.25rem' }}>{d.month}</span>
               </button>
             ))}
           </div>
@@ -211,10 +217,10 @@ const BookAppointment: React.FC = () => {
 
         {/* Time Slots */}
         {selectedDate && (
-          <div className="time-slots-section">
-            <h4>🕐 Select a Time Slot</h4>
+          <div className="time-slots-section animate-fade-in">
+            <h4>🕐 2. Select a Time Slot</h4>
             {isLoadingSlots ? (
-              <LoadingSpinner size="sm" text="Loading available slots..." />
+              <LoadingSpinner size="sm" text="Checking availability..." />
             ) : availableSlots.length > 0 ? (
               <div className="time-slots-grid">
                 {availableSlots.map((slot, index) => (
@@ -229,7 +235,7 @@ const BookAppointment: React.FC = () => {
               </div>
             ) : (
               <div className="alert alert-warning">
-                <span>ℹ️</span> No available slots for this date. Please select another date.
+                <span>ℹ️</span> No available blocks for this date.
               </div>
             )}
           </div>
@@ -237,32 +243,31 @@ const BookAppointment: React.FC = () => {
 
         {/* File Upload (Optional) */}
         {selectedTime && (
-          <div className="form-group mt-4">
-            <label className="form-label">📎 Attach Medical Documents (Optional)</label>
-            <input
-              type="file"
-              className="form-input"
-              accept=".pdf,.jpg,.jpeg,.png"
-              onChange={(e) => setFile(e.target.files?.[0] || null)}
-            />
-            <span className="form-hint">Accepted: PDF, JPG, PNG (max 2MB)</span>
+          <div className="form-group mt-4 animate-fade-in" style={{ padding: '2rem', background: 'var(--bg-secondary)', borderRadius: 'var(--border-radius-xl)', border: '1px dashed var(--border-default)' }}>
+            <label className="form-label" style={{ fontSize: '1.1rem', marginBottom: '1rem' }}>📎 3. Attach medical records (Optional)</label>
+            <div className="file-upload-wrapper" style={{ position: 'relative' }}>
+              <input
+                type="file"
+                className="form-input"
+                accept=".pdf,.jpg,.jpeg,.png"
+                onChange={(e) => setFile(e.target.files?.[0] || null)}
+                style={{ cursor: 'pointer', padding: '1rem' }}
+              />
+            </div>
+            <span className="form-hint" style={{ marginTop: '0.75rem', display: 'block' }}>Accepted formats: PDF, JPG, PNG (Max 5MB)</span>
           </div>
         )}
 
         {/* Booking Summary */}
         {selectedDate && selectedTime && (
-          <div className="booking-summary">
+          <div className="booking-summary animate-scale-in">
             <h4>📋 Appointment Summary</h4>
             <div className="summary-item">
-              <span className="summary-label">Doctor</span>
-              <span className="summary-value">{doctor.name}</span>
+              <span className="summary-label">👨‍⚕️ Specialist</span>
+              <span className="summary-value">Dr. {doctor.name} ({doctor.specialization})</span>
             </div>
             <div className="summary-item">
-              <span className="summary-label">Specialization</span>
-              <span className="summary-value">{doctor.specialization}</span>
-            </div>
-            <div className="summary-item">
-              <span className="summary-label">Date</span>
+              <span className="summary-label">📅 Selected Date</span>
               <span className="summary-value">
                 {new Date(selectedDate).toLocaleDateString('en-US', {
                   weekday: 'long',
@@ -273,12 +278,12 @@ const BookAppointment: React.FC = () => {
               </span>
             </div>
             <div className="summary-item">
-              <span className="summary-label">Time</span>
-              <span className="summary-value">{selectedTime}</span>
+              <span className="summary-label">⏰ Time Slot</span>
+              <span className="summary-value">{selectedTime.slice(0, 5)}</span>
             </div>
             {file && (
               <div className="summary-item">
-                <span className="summary-label">Attachment</span>
+                <span className="summary-label">📎 Attachment</span>
                 <span className="summary-value">{file.name}</span>
               </div>
             )}
@@ -290,8 +295,9 @@ const BookAppointment: React.FC = () => {
           <button
             className="btn btn-secondary"
             onClick={() => navigate('/patient/doctors')}
+            disabled={isBooking}
           >
-            Cancel
+            Go Back
           </button>
           <button
             className="btn btn-primary"
@@ -301,10 +307,10 @@ const BookAppointment: React.FC = () => {
             {isBooking ? (
               <>
                 <span className="spinner spinner-sm"></span>
-                Booking...
+                Processing...
               </>
             ) : (
-              'Confirm Booking'
+              'Confirm Appointment'
             )}
           </button>
         </div>
