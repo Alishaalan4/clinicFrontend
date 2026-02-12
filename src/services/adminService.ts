@@ -83,6 +83,11 @@ export const deleteDoctor = async (id: number): Promise<{ message: string }> => 
   return response.data;
 };
 
+export const changeDoctorPassword = async (id: number, data: AdminChangePasswordData): Promise<{ message: string }> => {
+  const response = await api.post<{ message: string }>(`/admin/doctors/${id}/changePassword`, data);
+  return response.data;
+};
+
 // Appointments
 export const getAppointments = async (): Promise<Appointment[]> => {
   const response = await api.get<Appointment[]>('/admin/appointments');

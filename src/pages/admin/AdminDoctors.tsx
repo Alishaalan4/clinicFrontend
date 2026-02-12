@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { getDoctors, deleteDoctor, createDoctor } from '../../services/adminService';
+import { getDoctors, deleteDoctor, createDoctor, changeDoctorPassword } from '../../services/adminService';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import Modal from '../../components/common/Modal';
 import type { Doctor } from '../../types';
@@ -25,6 +25,16 @@ const AdminDoctors: React.FC = () => {
     blood_type: 'A+',
     gender: 'male',
     specialization: '',
+  });
+
+  // Change password modal
+  const [passwordModal, setPasswordModal] = useState<{ isOpen: boolean; doctor: Doctor | null }>({
+    isOpen: false,
+    doctor: null,
+  });
+  const [passwordData, setPasswordData] = useState({
+    new_password: '',
+    confirm_password: '',
   });
 
   // Delete confirmation modal
@@ -123,6 +133,36 @@ const AdminDoctors: React.FC = () => {
     }
   };
 
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!passwordModal.doctor) return;
+
+    if (passwordData.new_password !== passwordData.confirm_password) {
+      setMessage({ type: 'error', text: 'Passwords do not match' });
+      return;
+    }
+
+    setActionLoading(passwordModal.doctor.id);
+    setMessage({ type: '', text: '' });
+
+    try {
+      await changeDoctorPassword(passwordModal.doctor.id, {
+        new_password: passwordData.new_password,
+        confirm_password: passwordData.confirm_password,
+      });
+      setMessage({ type: 'success', text: 'Password updated successfully!' });
+      setPasswordModal({ isOpen: false, doctor: null });
+      setPasswordData({ new_password: '', confirm_password: '' });
+    } catch (error: any) {
+      setMessage({
+        type: 'error',
+        text: error.response?.data?.message || 'Failed to update password',
+      });
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'];
 
   if (isLoading) {
@@ -209,6 +249,13 @@ const AdminDoctors: React.FC = () => {
                     <td>
                       <div className="table-actions">
                         <button
+                          className="action-btn edit"
+                          title="Change Password"
+                          onClick={() => setPasswordModal({ isOpen: true, doctor })}
+                        >
+                          🔒
+                        </button>
+                        <button
                           className="action-btn delete"
                           onClick={() => setDeleteModal({ isOpen: true, doctor })}
                         >
@@ -253,6 +300,12 @@ const AdminDoctors: React.FC = () => {
                   </div>
                 </div>
                 <div className="admin-card-actions">
+                  <button
+                    className="btn btn-secondary btn-sm"
+                    onClick={() => setPasswordModal({ isOpen: true, doctor })}
+                  >
+                    Change Pwd
+                  </button>
                   <button
                     className="btn btn-danger btn-sm"
                     onClick={() => setDeleteModal({ isOpen: true, doctor })}
@@ -420,6 +473,59 @@ const AdminDoctors: React.FC = () => {
         <p style={{ color: 'var(--danger-red)', fontSize: '0.875rem', marginTop: '0.5rem' }}>
           This action cannot be undone. All appointments with this doctor will also be affected.
         </p>
+      </Modal>
+
+
+      {/* Change Password Modal */}
+      <Modal
+        isOpen={passwordModal.isOpen}
+        onClose={() => setPasswordModal({ isOpen: false, doctor: null })}
+        title={`Change Password for Dr. ${passwordModal.doctor?.name}`}
+        footer={
+          <>
+            <button
+              className="btn btn-secondary"
+              onClick={() => setPasswordModal({ isOpen: false, doctor: null })}
+            >
+              Cancel
+            </button>
+            <button
+              form="change-password-form"
+              type="submit"
+              className="btn btn-primary"
+              disabled={actionLoading === passwordModal.doctor?.id}
+            >
+              {actionLoading === passwordModal.doctor?.id ? 'Updating...' : 'Update Password'}
+            </button>
+          </>
+        }
+      >
+        <form id="change-password-form" onSubmit={handleChangePassword}>
+          <div className="form-group">
+            <label className="form-label">New Password *</label>
+            <input
+              type="password"
+              className="form-input"
+              value={passwordData.new_password}
+              onChange={(e) => setPasswordData((prev) => ({ ...prev, new_password: e.target.value }))}
+              required
+              minLength={6}
+              placeholder="Enter new password"
+            />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Confirm Password *</label>
+            <input
+              type="password"
+              className="form-input"
+              value={passwordData.confirm_password}
+              onChange={(e) => setPasswordData((prev) => ({ ...prev, confirm_password: e.target.value }))}
+              required
+              minLength={6}
+              placeholder="Confirm new password"
+            />
+          </div>
+        </form>
       </Modal>
     </div>
   );
