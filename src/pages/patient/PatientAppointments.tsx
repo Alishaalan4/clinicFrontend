@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { getUserAppointments } from '../../services/userService';
+import { getUserAppointments, searchAppointments } from '../../services/userService';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import type { Appointment, AppointmentStatus } from '../../types';
 import './PatientPages.css';
@@ -10,27 +10,72 @@ type FilterStatus = 'all' | AppointmentStatus;
 const PatientAppointments: React.FC = () => {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [filter, setFilter] = useState<FilterStatus>('all');
+  const [statusFilter, setStatusFilter] = useState<FilterStatus>('all');
+  
+  // Filter state
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+  const [filters, setFilters] = useState({
+    doctor_name: '',
+    date: '',
+    time: ''
+  });
+  const [activeFilters, setActiveFilters] = useState({
+    doctor_name: '',
+    date: '',
+    time: ''
+  });
+
+  const fetchAppointments = async () => {
+    setIsLoading(true);
+    try {
+      let response;
+      // Check if any filter is active
+      const hasFilters = activeFilters.doctor_name || activeFilters.date || activeFilters.time;
+      
+      if (hasFilters) {
+        response = await searchAppointments(activeFilters);
+      } else {
+        response = await getUserAppointments();
+      }
+
+      if (response && 'data' in response) {
+        setAppointments(response.data);
+      } else {
+        setAppointments([]);
+      }
+    } catch (error) {
+      console.error('Error fetching appointments:', error);
+      setAppointments([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchAppointments = async () => {
-      try {
-        const response = await getUserAppointments();
-        if ('data' in response) {
-          setAppointments(response.data);
-        }
-      } catch (error) {
-        console.error('Error fetching appointments:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     fetchAppointments();
-  }, []);
+  }, [activeFilters]);
+
+  // Handle filter changes
+  const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFilters(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const applyFilters = () => {
+    setActiveFilters(filters);
+  };
+
+  const clearFilters = () => {
+    const reset = { doctor_name: '', date: '', time: '' };
+    setFilters(reset);
+    setActiveFilters(reset);
+  };
 
   const filteredAppointments = appointments.filter(
-    (apt) => filter === 'all' || apt.status === filter
+    (apt) => statusFilter === 'all' || apt.status === statusFilter
   );
 
   const getStatusClass = (status: string) => {
@@ -48,7 +93,7 @@ const PatientAppointments: React.FC = () => {
     return status.charAt(0).toUpperCase() + status.slice(1);
   };
 
-  const filters: { value: FilterStatus; label: string }[] = [
+  const statusFilters: { value: FilterStatus; label: string }[] = [
     { value: 'all', label: 'All' },
     { value: 'pending', label: 'Pending' },
     { value: 'booked', label: 'Booked' },
@@ -67,21 +112,73 @@ const PatientAppointments: React.FC = () => {
         <p className="page-subtitle">View and manage your appointments</p>
       </div>
 
-      <div className="appointments-filters">
-        {filters.map((f) => (
-          <button
-            key={f.value}
-            className={`filter-btn ${filter === f.value ? 'active' : ''}`}
-            onClick={() => setFilter(f.value)}
-          >
-            {f.label}
-            {f.value !== 'all' && (
-              <span style={{ marginLeft: '0.5rem', opacity: 0.7 }}>
-                ({appointments.filter((a) => a.status === f.value).length})
-              </span>
+      <div className="appointments-toolbar">
+        <div className="filters-section">
+            <button 
+                className={`toggle-filters-btn ${isFiltersOpen ? 'active' : ''}`}
+                onClick={() => setIsFiltersOpen(!isFiltersOpen)}
+            >
+                <span className="icon">🔍</span> 
+                {isFiltersOpen ? 'Hide Filters' : 'Search & Filter'}
+            </button>
+
+            {isFiltersOpen && (
+                <div className="filters-panel">
+                    <div className="filter-group">
+                        <label>Doctor Name</label>
+                        <input
+                            type="text"
+                            name="doctor_name"
+                            placeholder="Dr. Name"
+                            value={filters.doctor_name}
+                            onChange={handleFilterChange}
+                            className="filter-input"
+                        />
+                    </div>
+                    <div className="filter-group">
+                        <label>Date</label>
+                        <input
+                            type="date"
+                            name="date"
+                            value={filters.date}
+                            onChange={handleFilterChange}
+                            className="filter-input"
+                        />
+                    </div>
+                    <div className="filter-group">
+                        <label>Time</label>
+                        <input
+                            type="time"
+                            name="time"
+                            value={filters.time}
+                            onChange={handleFilterChange}
+                            className="filter-input"
+                        />
+                    </div>
+                    <div className="filter-actions">
+                        <button className="apply-btn" onClick={applyFilters}>Apply</button>
+                        <button className="clear-btn" onClick={clearFilters}>Clear</button>
+                    </div>
+                </div>
             )}
-          </button>
-        ))}
+        </div>
+
+        <div className="appointments-filters">
+          {statusFilters.map((f) => (
+            <button
+              key={f.value}
+              className={`filter-btn ${statusFilter === f.value ? 'active' : ''}`}
+              onClick={() => setStatusFilter(f.value)}
+            >
+              {f.label}
+              {f.value !== 'all' && (
+                <span className="filter-count">
+                  ({appointments.filter((a) => a.status === f.value).length})
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
       </div>
 
       {filteredAppointments.length > 0 ? (
@@ -153,10 +250,10 @@ const PatientAppointments: React.FC = () => {
         <div className="empty-state">
           <div className="empty-state-icon">📅</div>
           <p className="empty-state-title">
-            {filter === 'all' ? 'No appointments yet' : `No ${filter} appointments`}
+            {statusFilter === 'all' ? 'No appointments yet' : `No ${statusFilter} appointments`}
           </p>
           <p className="empty-state-description">
-            {filter === 'all'
+            {statusFilter === 'all'
               ? 'Book an appointment with one of our doctors to get started'
               : 'Try selecting a different filter'}
           </p>

@@ -64,6 +64,16 @@ export const getUserAppointments = async (page: number = 1): Promise<PaginatedRe
   return response.data;
 };
 
+export const searchAppointments = async (
+  filters: { doctor_name?: string; date?: string; time?: string },
+  page: number = 1
+): Promise<PaginatedResponse<Appointment> | { msg: string }> => {
+  const response = await api.get<PaginatedResponse<Appointment> | { msg: string }>('/user/appointments/search', {
+    params: { ...filters, page },
+  });
+  return response.data;
+};
+
 export const getAppointmentById = async (id: number): Promise<Appointment | null> => {
   const response = await api.get<Appointment | { msg: string }>(`/user/appointment/${id}`);
   if ('msg' in response.data) {
