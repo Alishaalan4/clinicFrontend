@@ -43,6 +43,14 @@ export const getDoctorAppointments = async (): Promise<Appointment[]> => {
   return response.data;
 };
 
+export const getDoctorAppointmentById = async (id: number): Promise<Appointment | null> => {
+  const response = await api.get<Appointment | { msg: string }>(`/doctor/appointments/${id}`);
+  if ('msg' in response.data) {
+    return null;
+  }
+  return response.data;
+};
+
 export const acceptAppointment = async (appointmentId: number): Promise<{ msg: string }> => {
   const response = await api.post<{ msg: string }>(`/doctor/appointments/${appointmentId}/accept`);
   return response.data;
