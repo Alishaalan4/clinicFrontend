@@ -38,8 +38,12 @@ export const deleteDoctorAvailability = async (id: number): Promise<{ message: s
 };
 
 // Appointments
-export const getDoctorAppointments = async (): Promise<Appointment[]> => {
-  const response = await api.get<Appointment[]>('/doctor/appointments');
+export const getDoctorAppointments = async (
+  filters?: { patient_name?: string; date?: string; time?: string }
+): Promise<Appointment[]> => {
+  const response = await api.get<Appointment[]>('/doctor/appointments', {
+    params: filters
+  });
   return response.data;
 };
 

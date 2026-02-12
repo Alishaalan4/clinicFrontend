@@ -20,6 +20,19 @@ const DoctorAppointments: React.FC = () => {
   const [actionLoading, setActionLoading] = useState<number | null>(null);
   const [message, setMessage] = useState({ type: '', text: '' });
 
+  // Search Filter State
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+  const [filters, setFilters] = useState({
+    patient_name: '',
+    date: '',
+    time: ''
+  });
+  const [activeFilters, setActiveFilters] = useState({
+    patient_name: '',
+    date: '',
+    time: ''
+  });
+
   // Cancel modal state
   const [cancelModal, setCancelModal] = useState<{ isOpen: boolean; appointmentId: number | null }>({
     isOpen: false,
@@ -28,8 +41,9 @@ const DoctorAppointments: React.FC = () => {
   const [cancelReason, setCancelReason] = useState('');
 
   const fetchAppointments = async () => {
+    setIsLoading(true);
     try {
-      const data = await getDoctorAppointments();
+      const data = await getDoctorAppointments(activeFilters);
       setAppointments(data);
     } catch (error) {
       console.error('Error fetching appointments:', error);
@@ -40,7 +54,26 @@ const DoctorAppointments: React.FC = () => {
 
   useEffect(() => {
     fetchAppointments();
-  }, []);
+  }, [activeFilters]);
+
+  // Handle filter changes
+  const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFilters(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const applyFilters = () => {
+    setActiveFilters(filters);
+  };
+
+  const clearFilters = () => {
+    const reset = { patient_name: '', date: '', time: '' };
+    setFilters(reset);
+    setActiveFilters(reset);
+  };
 
   const handleAccept = async (id: number) => {
     setActionLoading(id);
@@ -162,7 +195,7 @@ const DoctorAppointments: React.FC = () => {
     return status.charAt(0).toUpperCase() + status.slice(1);
   };
 
-  const filters: { value: FilterStatus; label: string }[] = [
+  const statusFilters: { value: FilterStatus; label: string }[] = [
     { value: 'all', label: 'All' },
     { value: 'pending', label: 'Pending' },
     { value: 'booked', label: 'Booked' },
@@ -188,8 +221,58 @@ const DoctorAppointments: React.FC = () => {
       )}
 
       <div className="appointments-toolbar">
+         <div className="filters-section" style={{ minWidth: '200px' }}>
+            <button 
+                className={`toggle-filters-btn ${isFiltersOpen ? 'active' : ''}`}
+                onClick={() => setIsFiltersOpen(!isFiltersOpen)}
+            >
+                <span className="icon">🔍</span> 
+                {isFiltersOpen ? 'Hide Filters' : 'Search & Filter'}
+            </button>
+
+            {isFiltersOpen && (
+                <div className="filters-panel">
+                    <div className="filter-group">
+                        <label>Patient Name</label>
+                        <input
+                            type="text"
+                            name="patient_name"
+                            placeholder="Patient Name"
+                            value={filters.patient_name}
+                            onChange={handleFilterChange}
+                            className="filter-input"
+                        />
+                    </div>
+                    <div className="filter-group">
+                        <label>Date</label>
+                        <input
+                            type="date"
+                            name="date"
+                            value={filters.date}
+                            onChange={handleFilterChange}
+                            className="filter-input"
+                        />
+                    </div>
+                    <div className="filter-group">
+                        <label>Time</label>
+                        <input
+                            type="time"
+                            name="time"
+                            value={filters.time}
+                            onChange={handleFilterChange}
+                            className="filter-input"
+                        />
+                    </div>
+                    <div className="filter-actions">
+                        <button className="apply-btn" onClick={applyFilters}>Apply</button>
+                        <button className="clear-btn" onClick={clearFilters}>Clear</button>
+                    </div>
+                </div>
+            )}
+        </div>
+
         <div className="filters">
-          {filters.map((f) => (
+          {statusFilters.map((f) => (
             <button
               key={f.value}
               className={`filter-btn ${filter === f.value ? 'active' : ''}`}
@@ -227,6 +310,7 @@ const DoctorAppointments: React.FC = () => {
                         weekday: 'short',
                         month: 'short',
                         day: 'numeric',
+                        year: 'numeric',
                       })}
                     </div>
                     <div style={{ color: 'var(--primary-blue)', fontSize: '0.875rem' }}>
