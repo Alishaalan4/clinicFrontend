@@ -7,6 +7,7 @@ import type {
   AdminStats,
   AdminChangePasswordData,
   DoctorRegisterData,
+  UserRegisterData,
 } from '../types';
 
 // Stats
@@ -45,6 +46,11 @@ export const deleteAdmin = async (id: number): Promise<{ msg: string }> => {
 export const getUsers = async (): Promise<User[]> => {
   const response = await api.get<User[]>('/admin/users');
   return response.data;
+};
+
+export const createUser = async (data: UserRegisterData): Promise<User> => {
+  const response = await api.post<{ msg: string; user: User }>('/admin/users', data);
+  return response.data.user;
 };
 
 export const getUserById = async (id: number): Promise<User> => {

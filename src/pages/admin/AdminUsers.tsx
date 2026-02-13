@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { getUsers, deleteUser, changeUserPassword } from '../../services/adminService';
+import { getUsers, deleteUser, changeUserPassword, createUser } from '../../services/adminService';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import Modal from '../../components/common/Modal';
 import type { User } from '../../types';
@@ -12,6 +12,20 @@ const AdminUsers: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [message, setMessage] = useState({ type: '', text: '' });
   const [actionLoading, setActionLoading] = useState<number | null>(null);
+
+  // Create user modal
+  const [createModal, setCreateModal] = useState(false);
+  const [createLoading, setCreateLoading] = useState(false);
+  const [createData, setCreateData] = useState({
+    name: '',
+    email: '',
+    password: '',
+    height: '',
+    weight: '',
+    gender: 'male',
+    blood_type: 'A+',
+    medical_conditions: '',
+  });
 
   // Delete confirmation modal
   const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; user: User | null }>({
@@ -57,6 +71,45 @@ const AdminUsers: React.FC = () => {
       setFilteredUsers(users);
     }
   }, [searchQuery, users]);
+
+  const handleCreate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCreateLoading(true);
+    setMessage({ type: '', text: '' });
+
+    try {
+      await createUser({
+        name: createData.name,
+        email: createData.email,
+        password: createData.password,
+        height: parseFloat(createData.height),
+        weight: parseFloat(createData.weight),
+        blood_type: createData.blood_type,
+        gender: createData.gender,
+        medical_conditions: createData.medical_conditions,
+      });
+      setMessage({ type: 'success', text: 'User created successfully!' });
+      setCreateModal(false);
+      setCreateData({
+        name: '',
+        email: '',
+        password: '',
+        height: '',
+        weight: '',
+        gender: 'male',
+        blood_type: 'A+',
+        medical_conditions: '',
+      });
+      fetchUsers();
+    } catch (error: any) {
+      setMessage({
+        type: 'error',
+        text: error.response?.data?.message || 'Failed to create user',
+      });
+    } finally {
+      setCreateLoading(false);
+    }
+  };
 
   const handleDelete = async () => {
     if (!deleteModal.user) return;
@@ -114,6 +167,11 @@ const AdminUsers: React.FC = () => {
         <div>
           <h1 className="page-title">Manage Users</h1>
           <p className="page-subtitle">View and manage patient accounts</p>
+        </div>
+        <div className="page-actions">
+          <button className="btn btn-primary" onClick={() => setCreateModal(true)}>
+            ➕ Add User
+          </button>
         </div>
       </div>
 
@@ -263,6 +321,129 @@ const AdminUsers: React.FC = () => {
           </p>
         </div>
       )}
+
+      {/* Create User Modal */}
+      <Modal
+        isOpen={createModal}
+        onClose={() => setCreateModal(false)}
+        title="Add New User"
+        size="lg"
+        footer={
+          <>
+            <button className="btn btn-secondary" onClick={() => setCreateModal(false)}>
+              Cancel
+            </button>
+            <button
+              form="create-user-form"
+              type="submit"
+              className="btn btn-primary"
+              disabled={createLoading}
+            >
+              {createLoading ? 'Creating...' : 'Create User'}
+            </button>
+          </>
+        }
+      >
+        <form id="create-user-form" onSubmit={handleCreate}>
+          <div className="create-form-grid">
+            <div className="form-group">
+              <label className="form-label">Full Name *</label>
+              <input
+                type="text"
+                className="form-input"
+                value={createData.name}
+                onChange={(e) => setCreateData((prev) => ({ ...prev, name: e.target.value }))}
+                required
+                minLength={3}
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Email *</label>
+              <input
+                type="email"
+                className="form-input"
+                value={createData.email}
+                onChange={(e) => setCreateData((prev) => ({ ...prev, email: e.target.value }))}
+                required
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Password *</label>
+              <input
+                type="password"
+                className="form-input"
+                value={createData.password}
+                onChange={(e) => setCreateData((prev) => ({ ...prev, password: e.target.value }))}
+                required
+                minLength={6}
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Gender</label>
+              <select
+                className="form-input"
+                value={createData.gender}
+                onChange={(e) => setCreateData((prev) => ({ ...prev, gender: e.target.value }))}
+              >
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+              </select>
+            </div>
+            <div className="form-group">
+              <label className="form-label">Height (cm) *</label>
+              <input
+                type="number"
+                className="form-input"
+                value={createData.height}
+                onChange={(e) => setCreateData((prev) => ({ ...prev, height: e.target.value }))}
+                required
+                min={0}
+                step="0.01"
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Weight (kg) *</label>
+              <input
+                type="number"
+                className="form-input"
+                value={createData.weight}
+                onChange={(e) => setCreateData((prev) => ({ ...prev, weight: e.target.value }))}
+                required
+                min={0}
+                step="0.01"
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Blood Type *</label>
+              <select
+                className="form-input"
+                value={createData.blood_type}
+                onChange={(e) => setCreateData((prev) => ({ ...prev, blood_type: e.target.value }))}
+                required
+              >
+                <option value="A+">A+</option>
+                <option value="A-">A-</option>
+                <option value="B+">B+</option>
+                <option value="B-">B-</option>
+                <option value="O+">O+</option>
+                <option value="O-">O-</option>
+                <option value="AB+">AB+</option>
+                <option value="AB-">AB-</option>
+              </select>
+            </div>
+            <div className="form-group full-width">
+              <label className="form-label">Medical Conditions</label>
+              <textarea
+                className="form-input"
+                value={createData.medical_conditions}
+                onChange={(e) => setCreateData((prev) => ({ ...prev, medical_conditions: e.target.value }))}
+                rows={3}
+                placeholder="Any existing medical conditions..."
+              />
+            </div>
+          </div>
+        </form>
+      </Modal>
 
       {/* Delete Confirmation Modal */}
       <Modal
